@@ -8,7 +8,7 @@ import (
     "encoding/json"
 )
 
-// array for the returned data marshaled from the GET request
+// Response represents the structure of the JSON response from GitLab
 type Response []struct {
     ID        int       `json:"id"`
     Title     string    `json:"title"`
@@ -20,44 +20,49 @@ type Response []struct {
 
 
 func main() {
-    // Ask user for their gitlab username
-    var usrName string
-    fmt.Println("Enter your Gitlab username:")
-    _, err := fmt.Scanln(&usrName)
+    // Get the GitLab username from the user
+    var username string
+    fmt.Print("Enter your Gitlab username: ")
+    _, err := fmt.Scanln(&username)
     if err != nil {
-        fmt.Println(err)
+        fmt.Printf("error reading input: %v", err)
         return
     }
 
-    // Concatenate the base URL with the username and specific API endpoint
-    url := "https://gitlab.com/api/v4/users/"+usrName+"/keys"
+    // Construct the API URL
+    url := fmt.Sprintf("https://gitlab.com/api/v4/users/%s/keys", username)
 
-    // DEBUG: Test if the url is concatenated correctly
-    fmt.Println(url)
+    // Fetch the SSH keys from Gitlab
+    keys, err := fetchGitlabKeys(url)
+    if err != nil {
+        fmt.Printf("Error fetching keys: %v", err)
+        return
+    }
 
-    // Perform the GET request
+    // Print the fetched SSH keys
+    for _, key := range keys {
+        fmt.Println(key.Key)
+    }
+}
+
+func fetchGitlabKeys(url string) (Response, error) {
+    // Perform GET request
     resp, err := http.Get(url)
     if err != nil {
-        fmt.Println("Unable to complete GET request: ", err)
-        return
+        return nil, fmt.Errorf("unable to complete GET request: %w", err)
     }
-    
-    // Close the get request
     defer resp.Body.Close()
+
+    // Read the response body
     body, err := io.ReadAll(resp.Body)
     if err != nil {
-        fmt.Println(err)
-        return
+        return nil, fmt.Errorf("error reading response body: %w", err)
     }
 
-    // Unmarshal the JSON data in the Response struct
+    // Unmarshal the JSON response
     var result Response
     if err := json.Unmarshal(body, &result); err != nil {
-        fmt.Println("Unable to unmarshal JSON", err)
+        return nil, fmt.Errorf("unable to unmarshal JSON: %w", err)
     }
-
-    // For loop allows us to print each specific line from the struct
-    for _, rec := range result {
-        fmt.Println(rec.Key)
-    }
+    return result, nil
 }
