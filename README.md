@@ -29,6 +29,7 @@ users to import SSH keys directly from GitLab.
 
 ## To-Do List
 - [x] Gather list of keys from gitlab
+- [ ] Option to append or overwrite
 - [ ] Import keys into the authorized_keys file
 - [ ] Check if keys already exist in the file
 
